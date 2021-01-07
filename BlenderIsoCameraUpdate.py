@@ -35,7 +35,7 @@ def SetScreenSizeAndCameraPosition(blender_unit_tile_size,
    ## Setup Render Ouput
    bpy.context.scene.render.resolution_x = decorated_tile_pixel_width
    bpy.context.scene.render.resolution_y = decorated_tile_pixel_height
-   bpy.context.scene.render.film_transparent = True
+   #bpy.context.scene.render.film_transparent = True
 
 
 
