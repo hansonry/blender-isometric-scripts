@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Isometric Tools",
     "blender": (2, 80, 0),
-    "category": "View",
+    "category": "Camera",
 }
 
 import bpy
@@ -20,6 +20,7 @@ def SetScreenSizeAndCameraPosition(blender_tile_size,
                                    add_pixels_to_right = 0,
                                    add_pixels_to_bottom = 0,
                                    add_pixels_to_left = 0,
+                                   camera_distance_scale = 2,
                                    evil_camera_scale_scrub_factor = 1,
                                    evil_camera_rotation_scrub_factor = 1):
 
@@ -59,7 +60,7 @@ def SetScreenSizeAndCameraPosition(blender_tile_size,
    iso_z_angle = math.radians(45)
 
    # Compute Camera Translation Distance
-   camera_move_distance = blender_tile_size * 2 # Be really sure we are able to see everything
+   camera_move_distance = blender_tile_size * camera_distance_scale
 
 
    # Compute Camera Scale Information
@@ -106,40 +107,47 @@ class IsometricCameraPosition(bpy.types.Operator):
    blender_tile_size: FloatProperty(
       name="Blender Tile Size",
       description="Size of the tile in Blender Units",
-      default=10,
+      default=2,
       min=0, soft_min=0.001, soft_max=100)
 
    undecorated_tile_pixel_width  : IntProperty(
-      name="Undecorated Tile Width",
+      name="Width (Pixels)",
       description="Width of a perfectly flat one unit isometric tile",
       default=64,
       min=0)
    undecorated_tile_pixel_height : IntProperty(
-      name="Undecorated Tile Height",
+      name="Height (Pixels)",
       description="Height of a perfectly flat one unit isometric tile",
       default=32,
       min=0)
 
    add_pixels_to_top    : IntProperty(
-      name="Add Pixels To Top",
+      name="Add Top (Pixels)",
       description="Amount of pixels to add to the top of the image",
       default=0,
       min=0)
    add_pixels_to_bottom : IntProperty(
-      name="Add Pixels To Bottom",
+      name="Add Bottom (Pixels)",
       description="Amount of pixels to add to the Bottom of the image",
       default=0,      
       min=0)
    add_pixels_to_right  : IntProperty(
-      name="Add Pixels To Right",
+      name="Add Right (Pixels)",
       description="Amount of pixels to add to the Right of the image",
       default=0,      
       min=0)
    add_pixels_to_left   : IntProperty(
-      name="Add Pixels To Left",
+      name="Add Left (Pixels)",
       description="Amount of pixels to add to the Left of the image",
       default=0,      
       min=0)
+
+   camera_distance_scale : FloatProperty(
+      name="Camera Distance Scale",
+      description="The distance of the camera is this times the Blender Tile Size",
+      default = 2,
+      step = 25,
+      min = 0, soft_min=0.1)
       
    def execute(self, context):
       cameraObject = obj_camera = bpy.context.scene.camera
@@ -150,7 +158,8 @@ class IsometricCameraPosition(bpy.types.Operator):
                                      self.add_pixels_to_top,
                                      self.add_pixels_to_right,
                                      self.add_pixels_to_bottom,
-                                     self.add_pixels_to_left)
+                                     self.add_pixels_to_left,
+                                     self.camera_distance_scale)
       return {'FINISHED'}
 
 def menu_func(self, context):
