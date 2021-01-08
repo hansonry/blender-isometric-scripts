@@ -1,15 +1,16 @@
 bl_info = {
-    "name": "Isometric Tools",
-    "blender": (2, 80, 0),
-    "category": "Camera",
+   "name": "Isometric Tools",
+   "blender": (2, 80, 0),
+   "category": "Camera",
 }
 
 import bpy
 import math
 from bpy.props import (
-    FloatProperty,
-    IntProperty,
-    StringProperty
+   FloatProperty,
+   IntProperty,
+   StringProperty,
+   BoolProperty
 )
 
 def SetScreenSizeAndCameraPosition(blender_tile_size, 
@@ -49,21 +50,23 @@ def SetScreenSizeAndCameraPosition(blender_tile_size,
    # no distortion
    x1 = 0.5
    y1 = (undecorated_tile_pixel_height / 2) - 0.5
-   x2 = (undecorated_tile_pixel_width  / 2) - 0.5
-   y2 = 0.5
-   m = (y1 - y2) / (x1 - x2)
+   m = -undecorated_tile_pixel_height / (undecorated_tile_pixel_width  + 2)
    b = y1 - m * x1
 
    pixel_height = 2 * b
    pixel_width  = 2 * (-b) / m
 
-   print("undecorated", undecorated_tile_pixel_width, undecorated_tile_pixel_height)
-   print("ajusted", pixel_width, pixel_height)
-
+   #print("Slope: ", m)
+   #print("undecorated", undecorated_tile_pixel_width, undecorated_tile_pixel_height)
+   #print("ajusted", pixel_width, pixel_height)
+   
 
    # Compute Camera Angles
    inverse_tile_ratio = pixel_height / pixel_width 
-   iso_x_angle = math.acos(inverse_tile_ratio)
+   if inverse_tile_ratio <= 1:
+      iso_x_angle = math.acos(inverse_tile_ratio)
+   else:
+      iso_x_angle = 0 
    iso_z_angle = math.radians(45)
 
    # Compute Camera Translation Distance
@@ -71,8 +74,8 @@ def SetScreenSizeAndCameraPosition(blender_tile_size,
 
 
    # Compute Camera Scale Information
-   pixel_correction_scale = undecorated_tile_pixel_width / pixel_width 
-   blender_tile_width_at_angle = math.sqrt((blender_tile_size ** 2) + (blender_tile_size ** 2)) * pixel_correction_scale 
+   pixel_correction_scale = undecorated_tile_pixel_width / (pixel_width + 1) # Not sure why I need the plus 1 here. Solved via trial and error
+   blender_tile_width_at_angle = math.sqrt((blender_tile_size ** 2) + (blender_tile_size ** 2)) * pixel_correction_scale
    blender_units_per_pixel = blender_tile_width_at_angle / undecorated_tile_pixel_width
    camera_width_ortho_scale = (blender_tile_width_at_angle  + 
                                ((add_pixels_to_right + add_pixels_to_left) * blender_units_per_pixel))
@@ -117,17 +120,26 @@ class IsometricCameraPosition(bpy.types.Operator):
       description="Size of the tile in Blender Units",
       default=2,
       min=0, soft_min=0.001, soft_max=100)
-
+   
    undecorated_tile_pixel_width  : IntProperty(
       name="Width (Pixels)",
       description="Width of a perfectly flat one unit isometric tile",
-      default=64,
-      min=0)
+      default=62,
+      step=2,
+      min=2)
+
    undecorated_tile_pixel_height : IntProperty(
       name="Height (Pixels)",
       description="Height of a perfectly flat one unit isometric tile",
+      update=HeightUpdateFunction,
       default=32,
-      min=0)
+      step=2,
+      min=4)
+      
+
+
+
+
 
    add_pixels_to_top    : IntProperty(
       name="Add Top (Pixels)",
