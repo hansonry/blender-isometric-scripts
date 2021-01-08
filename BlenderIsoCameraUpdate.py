@@ -20,9 +20,7 @@ def SetScreenSizeAndCameraPosition(blender_tile_size,
                                    add_pixels_to_right = 0,
                                    add_pixels_to_bottom = 0,
                                    add_pixels_to_left = 0,
-                                   camera_distance_scale = 2,
-                                   evil_camera_scale_scrub_factor = 1,
-                                   evil_camera_rotation_scrub_factor = 1):
+                                   camera_distance_scale = 2):
 
 
    # The dimentions of the decorated tile
@@ -46,17 +44,26 @@ def SetScreenSizeAndCameraPosition(blender_tile_size,
       max_decorated_pixel_dimension = decorated_tile_pixel_height
    camera_unit_pixel = 1 / max_decorated_pixel_dimension
 
-   # I think my math is correct, but I need to do this otherwise the tile
-   # gets these strange jagged edges that make it look like it is bowing in 
-   # I have no idea why these are nessary, but they seem to be.
-   #evil_camera_scale_scrub_factor            = 0.98
-   #evil_camera_rotation_scrub_factor         = 1.005
 
+   # Map the lines of the square onto the center of pixels so we get
+   # no distortion
+   x1 = 0.5
+   y1 = (undecorated_tile_pixel_height / 2) - 0.5
+   x2 = (undecorated_tile_pixel_width  / 2) - 0.5
+   y2 = 0.5
+   m = (y1 - y2) / (x1 - x2)
+   b = y1 - m * x1
+
+   pixel_height = 2 * b
+   pixel_width  = 2 * (-b) / m
+
+   print("undecorated", undecorated_tile_pixel_width, undecorated_tile_pixel_height)
+   print("ajusted", pixel_width, pixel_height)
 
 
    # Compute Camera Angles
-   inverse_tile_ratio = undecorated_tile_pixel_height / undecorated_tile_pixel_width
-   iso_x_angle = math.acos(inverse_tile_ratio) * evil_camera_rotation_scrub_factor
+   inverse_tile_ratio = pixel_height / pixel_width 
+   iso_x_angle = math.acos(inverse_tile_ratio)
    iso_z_angle = math.radians(45)
 
    # Compute Camera Translation Distance
@@ -64,9 +71,10 @@ def SetScreenSizeAndCameraPosition(blender_tile_size,
 
 
    # Compute Camera Scale Information
-   blender_tile_width_at_angle = math.sqrt((blender_tile_size ** 2) + (blender_tile_size ** 2))
+   pixel_correction_scale = undecorated_tile_pixel_width / pixel_width 
+   blender_tile_width_at_angle = math.sqrt((blender_tile_size ** 2) + (blender_tile_size ** 2)) * pixel_correction_scale 
    blender_units_per_pixel = blender_tile_width_at_angle / undecorated_tile_pixel_width
-   camera_width_ortho_scale = ((blender_tile_width_at_angle * evil_camera_scale_scrub_factor) + 
+   camera_width_ortho_scale = (blender_tile_width_at_angle  + 
                                ((add_pixels_to_right + add_pixels_to_left) * blender_units_per_pixel))
 
    if decorated_tile_pixel_width > decorated_tile_pixel_height:
