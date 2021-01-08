@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Isometric Tools",
     "blender": (2, 80, 0),
-    "category": "Object",
+    "category": "View",
 }
 
 import bpy
@@ -12,19 +12,16 @@ from bpy.props import (
     StringProperty
 )
 
-def SetScreenSizeAndCameraPosition(blender_unit_tile_size, 
-                                   tile_size, 
+def SetScreenSizeAndCameraPosition(blender_tile_size, 
                                    undecorated_tile_pixel_width,
                                    undecorated_tile_pixel_height,
-                                   camera_name = 'Camera',
+                                   cameraObject,
                                    add_pixels_to_top = 0,
                                    add_pixels_to_right = 0,
                                    add_pixels_to_bottom = 0,
                                    add_pixels_to_left = 0,
                                    evil_camera_scale_scrub_factor = 1,
                                    evil_camera_rotation_scrub_factor = 1):
-
-   bender_tile_size = blender_unit_tile_size * tile_size
 
 
    # The dimentions of the decorated tile
@@ -62,11 +59,11 @@ def SetScreenSizeAndCameraPosition(blender_unit_tile_size,
    iso_z_angle = math.radians(45)
 
    # Compute Camera Translation Distance
-   camera_move_distance = bender_tile_size * 2 # Be really sure we are able to see everything
+   camera_move_distance = blender_tile_size * 2 # Be really sure we are able to see everything
 
 
    # Compute Camera Scale Information
-   blender_tile_width_at_angle = math.sqrt((bender_tile_size ** 2) + (bender_tile_size ** 2))
+   blender_tile_width_at_angle = math.sqrt((blender_tile_size ** 2) + (blender_tile_size ** 2))
    blender_units_per_pixel = blender_tile_width_at_angle / undecorated_tile_pixel_width
    camera_width_ortho_scale = ((blender_tile_width_at_angle * evil_camera_scale_scrub_factor) + 
                                ((add_pixels_to_right + add_pixels_to_left) * blender_units_per_pixel))
@@ -82,7 +79,6 @@ def SetScreenSizeAndCameraPosition(blender_unit_tile_size,
    camera_shift_x = (add_pixels_to_right - add_pixels_to_left)   * camera_unit_pixel  * 0.5
    camera_shift_y = (add_pixels_to_top   - add_pixels_to_bottom) * camera_unit_pixel  * 0.5
 
-   cameraObject = bpy.data.objects[camera_name]
    cameraObject.data.type = 'ORTHO'
    cameraObject.data.ortho_scale = camera_ortho_scale 
 
@@ -106,17 +102,10 @@ class IsometricCameraPosition(bpy.types.Operator):
    #bl_region_type = 'UI'
    bl_options = {'REGISTER', 'UNDO'}
    
-   tile_size: IntProperty(
-      name="Tile Multiplier",
-      description="How big of a tile you are making",
-      default=1,
-      min=1, 
-      soft_max=10)
 
-
-   blender_unit_tile_size: FloatProperty(
-      name="Blender Unit Tile Size",
-      description="Size of one tile in blender units",
+   blender_tile_size: FloatProperty(
+      name="Blender Tile Size",
+      description="Size of the tile in Blender Units",
       default=10,
       min=0, soft_min=0.001, soft_max=100)
 
@@ -152,18 +141,12 @@ class IsometricCameraPosition(bpy.types.Operator):
       default=0,      
       min=0)
       
-      
-   camera_name : StringProperty(
-      name="Camera Object Name",
-      description="Name of the Camera Object",
-      default="Camera")
-      
    def execute(self, context):
-      SetScreenSizeAndCameraPosition(self.blender_unit_tile_size,
-                                     self.tile_size,
+      cameraObject = obj_camera = bpy.context.scene.camera
+      SetScreenSizeAndCameraPosition(self.blender_tile_size,
                                      self.undecorated_tile_pixel_width,
                                      self.undecorated_tile_pixel_height,
-                                     self.camera_name,
+                                     cameraObject,
                                      self.add_pixels_to_top,
                                      self.add_pixels_to_right,
                                      self.add_pixels_to_bottom,
@@ -175,11 +158,11 @@ def menu_func(self, context):
     
 def register():
    bpy.utils.register_class(IsometricCameraPosition)
-   bpy.types.VIEW3D_MT_mesh_add.append(menu_func)
+   bpy.types.VIEW3D_MT_view.append(menu_func)
 
 def unregister():
    bpy.utils.unregister_class(IsometricCameraPosition)
-   bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
+   bpy.types.VIEW3D_MT_view.remove(menu_func)
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
    register()
